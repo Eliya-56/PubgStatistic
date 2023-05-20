@@ -1,5 +1,5 @@
-﻿using PubgStatistic.Core.Records;
-using System.Text;
+﻿using System.Text;
+using PubgStatistic.Contracts.Records;
 
 namespace PubgStatistic.Core
 {

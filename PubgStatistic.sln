@@ -5,7 +5,7 @@ VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PubgStatistic.ConsoleApp", "PubgStatistic\PubgStatistic.ConsoleApp.csproj", "{FDE032FE-ED91-427B-957A-FBD8D920EEFE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PubgStatistic.Core", "PubgStatistic.Core\PubgStatistic.Core.csproj", "{C1ACF012-4E18-4047-B3EC-86C80CB427B7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PubgStatistic.Contracts", "PubgStatistic.Core\PubgStatistic.Contracts.csproj", "{C1ACF012-4E18-4047-B3EC-86C80CB427B7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PubgStatistic.PubgApi", "PubgStatistic.PubgApi\PubgStatistic.PubgApi.csproj", "{66F79F39-05CD-4476-AFD3-7A3A607CC804}"
 EndProject

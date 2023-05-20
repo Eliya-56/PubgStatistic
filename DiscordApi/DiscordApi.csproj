@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PubgStatistic.Core\PubgStatistic.Core.csproj" />
+    <ProjectReference Include="..\PubgStatistic.Core\PubgStatistic.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

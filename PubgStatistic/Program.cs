@@ -2,7 +2,7 @@
 
 using DiscordApi;
 using PubgStatistic.ConsoleApp;
-using PubgStatistic.Core.Interfaces;
+using PubgStatistic.Contracts.Interfaces;
 using PubgStatistic.PubgApi;
 
 const string myPlayerId = "account.054f6584d44048099cd32724bcb01a5d";

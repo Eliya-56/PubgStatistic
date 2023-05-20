@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Webhook;
+using PubgStatistic.Contracts.Records;
 using PubgStatistic.Core;
-using PubgStatistic.Core.Records;
 
 namespace DiscordApi
 {

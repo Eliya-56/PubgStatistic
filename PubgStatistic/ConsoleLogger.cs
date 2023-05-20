@@ -1,4 +1,4 @@
-﻿using PubgStatistic.Core.Interfaces;
+﻿using PubgStatistic.Contracts.Interfaces;
 
 namespace PubgStatistic.ConsoleApp
 {

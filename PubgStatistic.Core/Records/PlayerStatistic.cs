@@ -1,4 +1,4 @@
-﻿namespace PubgStatistic.Core.Records
+﻿namespace PubgStatistic.Contracts.Records
 {
     public record PlayerStatistic(
         string Name,

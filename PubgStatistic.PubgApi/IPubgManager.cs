@@ -1,4 +1,4 @@
-﻿using PubgStatistic.Core.Records;
+﻿using PubgStatistic.Contracts.Records;
 
 namespace PubgStatistic.PubgApi
 {

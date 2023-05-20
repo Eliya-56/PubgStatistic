@@ -1,4 +1,4 @@
-﻿namespace PubgStatistic.Core.Interfaces
+﻿namespace PubgStatistic.Contracts.Interfaces
 {
     public interface ILogger
     {
