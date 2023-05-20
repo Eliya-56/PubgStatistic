@@ -1,106 +1,93 @@
 ﻿using Pubg.Net;
-using PubgStatistic.Core;
 using PubgStatistic.Core.Records;
 
 namespace PubgStatistic.PubgApi
 {
-    public class PubgManager
+    public class PubgManager : IPubgManager
     {
         private readonly string _apiKey;
         private readonly string _playerId;
-        private readonly DateTimeOffset _startDate;
 
-        public PubgManager(string apiKey, string playerId, DateTimeOffset startDate)
+        public PubgManager(string apiKey, string playerId)
         {
             _apiKey = apiKey;
             _playerId = playerId;
-            _startDate = startDate;
         }
 
-        public async IAsyncEnumerable<PubgMatch> GetMatches()
+        public async IAsyncEnumerable<PlayerStatistic> GetStatisticFromDate(DateTimeOffset fromDate)
+        {
+            IDictionary<string, IList<PubgParticipantStats>> playerMatchesStatistic = new Dictionary<string, IList<PubgParticipantStats>>();
+            await foreach (var match in GetMatches())
+            {
+                if (DateTimeOffset.Parse(match.CreatedAt) < fromDate)
+                {
+                    continue;
+                }
+
+                UpdateParticipantsDictionaryFromMatch(match, playerMatchesStatistic);
+            }
+            
+            foreach (var statistic in playerMatchesStatistic)
+            {
+                yield return GetPlayerStatistic(statistic.Value);
+            }
+        }
+
+        public async IAsyncEnumerable<PlayerStatistic> GetStatisticForNumberOfMatches(int numberOfMatches)
+        {
+            IDictionary<string, IList<PubgParticipantStats>> playerMatchesStatistic = new Dictionary<string, IList<PubgParticipantStats>>();
+            await foreach (var match in GetMatches().OrderByDescending(x => x.CreatedAt).Take(numberOfMatches))
+            {
+                UpdateParticipantsDictionaryFromMatch(match, playerMatchesStatistic);
+            }
+
+            foreach (var statistic in playerMatchesStatistic)
+            {
+                yield return GetPlayerStatistic(statistic.Value);
+            }
+        }
+
+        private async IAsyncEnumerable<PubgMatch> GetMatches()
         {
             var player = await new PubgPlayerService(_apiKey).GetPlayerAsync(PubgPlatform.Steam, _playerId);
 
             var matchService = new PubgMatchService(_apiKey);
             foreach (var matchId in player.MatchIds)
             {
-                var match = await matchService.GetMatchAsync(PubgPlatform.Steam, matchId);
-                var createdTime = DateTimeOffset.Parse(match.CreatedAt);
-                if (createdTime > _startDate)
+                yield return await matchService.GetMatchAsync(PubgPlatform.Steam, matchId);
+            }
+        }
+
+        private void UpdateParticipantsDictionaryFromMatch(PubgMatch match, IDictionary<string, IList<PubgParticipantStats>> playerMatchesStatistic)
+        {
+            var myRoster = match.Rosters.FirstOrDefault(x => x.Participants.Select(y => y.Stats.PlayerId).Contains(_playerId));
+            if (myRoster == null)
+            {
+                throw new NullReferenceException($"Can't find player with id {_playerId} in match with id {match.Id}");
+            }
+
+            foreach (var participant in myRoster.Participants)
+            {
+                if (playerMatchesStatistic.ContainsKey(participant.Id))
                 {
-                    yield return match;
+                    playerMatchesStatistic[participant.Id].Add(participant.Stats);
+                }
+                else
+                {
+                    playerMatchesStatistic.Add(participant.Id, new List<PubgParticipantStats> { participant.Stats });
                 }
             }
         }
 
-        public async Task<IList<PlayerStatistic>> GetStatistic(IAsyncEnumerable<PubgMatch> matches)
-        {
-
-            IDictionary<string, IList<PlayerMatchStatistic>> playersStatistic = new Dictionary<string, IList<PlayerMatchStatistic>>();
-            await foreach (var match in matches)
-            {
-                await foreach (var playerMatch in GetMatchStatistic(match))
-                {
-                    if (playersStatistic.ContainsKey(playerMatch.PlayerId))
-                    {
-                        playersStatistic[playerMatch.PlayerId].Add(playerMatch);
-                    }
-                    else
-                    {
-                        playersStatistic.Add(playerMatch.PlayerId, new List<PlayerMatchStatistic> { playerMatch });
-                    }
-                }
-            }
-
-            if (playersStatistic.Count <= 0)
-            {
-                return new List<PlayerStatistic>();
-            }
-
-            return playersStatistic.Select(x => GetPlayerOverallStatistic(x.Value)).ToList();
-        }
-
-        public async IAsyncEnumerable<PlayerMatchStatistic> GetMatchStatistic(PubgMatch match)
-        {
-            var myRoster = match.Rosters.First(x => x.Participants.Select(x => x.Stats.PlayerId).Contains(_playerId));
-
-            var grouped = myRoster.Participants.GroupBy(x => x.Stats.PlayerId);
-
-            foreach (var group in grouped)
-            {
-                var firstItemStats = group.First().Stats;
-                var name = firstItemStats.Name;
-                var kills = firstItemStats.Kills;
-                var damage = firstItemStats.DamageDealt;
-                var headShotsKills = firstItemStats.HeadshotKills;
-                var revives = firstItemStats.Revives;
-                var walkDistance = firstItemStats.WalkDistance;
-                var vehiclesDistance = firstItemStats.RideDistance;
-                var swimDistance = firstItemStats.SwimDistance;
-
-                yield return new PlayerMatchStatistic(
-                    firstItemStats.PlayerId,
-                    name,
-                    kills,
-                    damage,
-                    headShotsKills,
-                    revives,
-                    walkDistance,
-                    vehiclesDistance,
-                    swimDistance
-                );
-            }
-        }
-        
-        private PlayerStatistic GetPlayerOverallStatistic(IList<PlayerMatchStatistic> matchStatistics)
+        private static PlayerStatistic GetPlayerStatistic(ICollection<PubgParticipantStats> matchStatistics)
         {
             var name = matchStatistics.First().Name;
             var kills = matchStatistics.Sum(x => x.Kills);
-            var damage = matchStatistics.Sum(x => x.Damage);
-            var headShotsKills = matchStatistics.Sum(x => x.HeadShotsKills);
+            var damage = matchStatistics.Sum(x => x.DamageDealt);
+            var headShotsKills = matchStatistics.Sum(x => x.HeadshotKills);
             var revives = matchStatistics.Sum(x => x.Revives);
             var walkDistance = matchStatistics.Sum(x => x.WalkDistance);
-            var vehiclesDistance = matchStatistics.Sum(x => x.VehiclesDistance);
+            var vehiclesDistance = matchStatistics.Sum(x => x.RideDistance);
             var swimDistance = matchStatistics.Sum(x => x.SwimDistance);
 
             return new PlayerStatistic(

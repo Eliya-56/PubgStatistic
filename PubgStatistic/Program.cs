@@ -9,7 +9,8 @@ const string myPlayerId = "account.054f6584d44048099cd32724bcb01a5d";
 const string discordWebhookUrl = "https://discord.com/api/webhooks/1102266019197751307/VaGsSXpfVJEWv5QM0fYWOrRmsdRdSyOY3uUqiJRP611JqB30wldbZ8RHmwietE3ywTh7";
 const string pubgApiKey = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxZGQ4OGNiMC1jOWIzLTAxM2ItZmJlOC0yZTE3NmZkNTJmNDkiLCJpc3MiOiJnYW1lbG9ja2VyIiwiaWF0IjoxNjgyODc5NDc2LCJwdWIiOiJibHVlaG9sZSIsInRpdGxlIjoicHViZyIsImFwcCI6Im15b3duc3RhdGlzdGljIn0.ezzzYfQGTswZb9x7rZym7GMUZqTPMF8rtdN5B3VG-qw";
 
-var pubgManager = new PubgManager(pubgApiKey, myPlayerId, DateTimeOffset.UtcNow.AddHours(-16));
+var fromDate = DateTimeOffset.UtcNow.AddHours(-16);
+IPubgManager pubgManager = new PubgManager(pubgApiKey, myPlayerId);
 
 ulong? messageId = null;
 IDiscordManager discordManager = new DiscordManager(discordWebhookUrl);
@@ -26,8 +27,7 @@ while (true)
         try
         {
             await logger.LogMessageAsync("Getting statistic");
-            var matches = pubgManager.GetMatches();
-            var stats = await pubgManager.GetStatistic(matches);
+            var stats = await pubgManager.GetStatisticFromDate(fromDate).ToListAsync();
 
             await logger.LogMessageAsync("Send statistic to discord");
             if (messageId == null)
