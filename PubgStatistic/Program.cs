@@ -12,7 +12,7 @@ const string pubgApiKey = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxZGQ4
 var pubgManager = new PubgManager(pubgApiKey, myPlayerId, DateTimeOffset.UtcNow.AddHours(-16));
 
 ulong? messageId = null;
-var discordManager = new DiscordManager(discordWebhookUrl);
+IDiscordManager discordManager = new DiscordManager(discordWebhookUrl);
 
 ILogger logger = new ConsoleLogger();
 
@@ -30,7 +30,14 @@ while (true)
             var stats = await pubgManager.GetStatistic(matches);
 
             await logger.LogMessageAsync("Send statistic to discord");
-            messageId = await discordManager.SendStatistic(stats, messageId);
+            if (messageId == null)
+            {
+                messageId = await discordManager.SendPubgStatisticAsync(stats);
+            }
+            else
+            {
+                await discordManager.ModifyPubgStatisticAsync(stats, messageId.Value);
+            }
 
             await logger.LogMessageAsync($"Statistic sent with messageId: {messageId}");
         }
