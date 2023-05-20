@@ -1,5 +1,6 @@
 ﻿using Pubg.Net;
 using PubgStatistic.Core;
+using PubgStatistic.Core.Records;
 
 namespace PubgStatistic.PubgApi
 {
