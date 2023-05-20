@@ -1,6 +1,7 @@
 ﻿using Pubg.Net;
+using PubgStatistic.Core;
 
-namespace PubgStatistic
+namespace PubgStatistic.PubgApi
 {
     public class PubgManager
     {

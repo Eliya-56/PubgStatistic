@@ -1,8 +1,9 @@
-﻿using Discord;
+﻿using System.Text;
+using Discord;
 using Discord.Webhook;
-using System.Text;
+using PubgStatistic.Core;
 
-namespace PubgStatistic
+namespace DiscordApi
 {
     public class DiscordManager
     {

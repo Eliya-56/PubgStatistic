@@ -1,4 +1,4 @@
-﻿namespace PubgStatistic
+﻿namespace PubgStatistic.Core
 {
     public record PlayerMatchStatistic(
         string PlayerId,

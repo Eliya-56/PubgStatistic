@@ -1,12 +1,13 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using PubgStatistic;
+using DiscordApi;
+using PubgStatistic.PubgApi;
 
 const string myPlayerId = "account.054f6584d44048099cd32724bcb01a5d";
 const string discordWebhookUrl = "https://discord.com/api/webhooks/1102266019197751307/VaGsSXpfVJEWv5QM0fYWOrRmsdRdSyOY3uUqiJRP611JqB30wldbZ8RHmwietE3ywTh7";
 const string pubgApiKey = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxZGQ4OGNiMC1jOWIzLTAxM2ItZmJlOC0yZTE3NmZkNTJmNDkiLCJpc3MiOiJnYW1lbG9ja2VyIiwiaWF0IjoxNjgyODc5NDc2LCJwdWIiOiJibHVlaG9sZSIsInRpdGxlIjoicHViZyIsImFwcCI6Im15b3duc3RhdGlzdGljIn0.ezzzYfQGTswZb9x7rZym7GMUZqTPMF8rtdN5B3VG-qw";
 
-var pubgManager = new PubgManager(pubgApiKey, myPlayerId, DateTimeOffset.UtcNow.AddDays(-2));
+var pubgManager = new PubgManager(pubgApiKey, myPlayerId, DateTimeOffset.UtcNow.AddHours(-6));
 
 ulong? messageId = null;
 var discordManager = new DiscordManager(discordWebhookUrl);
