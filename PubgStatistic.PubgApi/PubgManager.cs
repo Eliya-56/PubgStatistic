@@ -68,13 +68,13 @@ namespace PubgStatistic.PubgApi
 
             foreach (var participant in myRoster.Participants)
             {
-                if (playerMatchesStatistic.ContainsKey(participant.Id))
+                if (playerMatchesStatistic.ContainsKey(participant.Stats.PlayerId))
                 {
-                    playerMatchesStatistic[participant.Id].Add(participant.Stats);
+                    playerMatchesStatistic[participant.Stats.PlayerId].Add(participant.Stats);
                 }
                 else
                 {
-                    playerMatchesStatistic.Add(participant.Id, new List<PubgParticipantStats> { participant.Stats });
+                    playerMatchesStatistic.Add(participant.Stats.PlayerId, new List<PubgParticipantStats> { participant.Stats });
                 }
             }
         }
