@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DiscordApi;
-using PubgStatistic.Contracts.Interfaces;
+﻿using PubgStatistic.Contracts.Interfaces;
 using PubgStatistic.Contracts.Records;
-using PubgStatistic.PubgApi;
 
 namespace PubgStatistic.ApplicationLogic
 {
-    public class StatisticManager
+    public class StatisticManager : IStatisticManager
     {
         private readonly IPubgManager _pubgManager;
         private readonly IDiscordManager _discordManager;
@@ -28,8 +21,48 @@ namespace PubgStatistic.ApplicationLogic
             _logger = logger;
         }
 
-        public async Task StartNewGameSessionAsync(CancellationToken ct = default)
+        public async Task SendStatisticSnapshotAsync(
+            RequestProperties requestProperties,
+            int numberOfGames,
+            CancellationToken ct = default)
         {
+            await _logger.LogMessageAsync($"Start send statistic snapshot task for last {numberOfGames} games");
+
+            _discordManager.WebhookUrl = requestProperties.DiscordWebhookUrl;
+            _pubgManager.ApiKey = requestProperties.PubgApiKey;
+
+            await _logger.LogMessageAsync($"Getting statistic from pubg server");
+            var stats = await _pubgManager.GetStatisticForNumberOfMatches(requestProperties.PlayerName, numberOfGames, ct).ToListAsync(ct);
+
+            await _logger.LogMessageAsync($"Send statistic to discord");
+            await _discordManager.SendPubgStatisticAsync(stats);
+        }
+
+        public async Task SendStatisticSnapshotAsync(
+            RequestProperties requestProperties,
+            DateTimeOffset startDate,
+            CancellationToken ct = default)
+        {
+            await _logger.LogMessageAsync($"Start send statistic snapshot task from date {startDate:f}");
+
+            _discordManager.WebhookUrl = requestProperties.DiscordWebhookUrl;
+            _pubgManager.ApiKey = requestProperties.PubgApiKey;
+
+
+            await _logger.LogMessageAsync($"Getting statistic from pubg server");
+            var stats = await _pubgManager.GetStatisticFromDate(requestProperties.PlayerName, startDate, ct).ToListAsync(ct);
+
+            await _logger.LogMessageAsync($"Send statistic to discord");
+            await _discordManager.SendPubgStatisticAsync(stats);
+        }
+
+        public async Task StartNewGameSessionAsync(
+            RequestProperties requestProperties,
+            CancellationToken ct = default)
+        {
+            _discordManager.WebhookUrl = requestProperties.DiscordWebhookUrl;
+            _pubgManager.ApiKey = requestProperties.PubgApiKey;
+
             var smallRequestIntervalSeconds = 60;
             var largeRequestIntervalSeconds = 1200;
             var waitTimeSeconds = 0;
@@ -44,7 +77,7 @@ namespace PubgStatistic.ApplicationLogic
                 do
                 {
                     await _logger.LogMessageAsync("Try get statistic from pubg server");
-                    var newStatistic = await _pubgManager.GetStatisticFromDate(startDateTime).ToListAsync(ct);
+                    var newStatistic = await _pubgManager.GetStatisticFromDate(requestProperties.PlayerName, startDateTime).ToListAsync(ct);
 
                     if (StatisticChanged(lastStatistics, newStatistic))
                     {

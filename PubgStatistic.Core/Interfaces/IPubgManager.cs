@@ -1,10 +1,19 @@
 ﻿using PubgStatistic.Contracts.Records;
 
-namespace PubgStatistic.PubgApi
+namespace PubgStatistic.Contracts.Interfaces
 {
     public interface IPubgManager
     {
-        public IAsyncEnumerable<PlayerStatistic> GetStatisticFromDate(DateTimeOffset fromDate);
-        public IAsyncEnumerable<PlayerStatistic> GetStatisticForNumberOfMatches(int numberOfMatches);
+        string ApiKey { set; }
+
+        IAsyncEnumerable<PlayerStatistic> GetStatisticFromDate(
+            string playerName, 
+            DateTimeOffset fromDate,
+            CancellationToken ct = default);
+
+        IAsyncEnumerable<PlayerStatistic> GetStatisticForNumberOfMatches(
+            string playerName, 
+            int numberOfMatches,
+            CancellationToken ct = default);
     }
 }

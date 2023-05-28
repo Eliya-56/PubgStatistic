@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Webhook;
+using PubgStatistic.Contracts.Interfaces;
 using PubgStatistic.Contracts.Records;
 using PubgStatistic.Core;
 
@@ -7,24 +8,33 @@ namespace DiscordApi
 {
     public class DiscordManager : IDiscordManager
     {
-        private readonly string _webhookUrl;
+        private string? _webhookUrl;
 
-        public DiscordManager(string webhookUrl)
+        public string WebhookUrl
         {
-            _webhookUrl = webhookUrl;
+            private get
+            {
+                if (_webhookUrl == null)
+                {
+                    throw new NullReferenceException($"{nameof(WebhookUrl)} is not set");
+                }
+
+                return _webhookUrl;
+            }
+            set => _webhookUrl = value;
         }
 
         public async Task<ulong> SendPubgStatisticAsync(IList<PlayerStatistic> stats)
         {
             var message = BuildStatisticMessage(stats);
-            using var client = new DiscordWebhookClient(_webhookUrl);
+            using var client = new DiscordWebhookClient(WebhookUrl);
             return await client.SendMessageAsync(embeds: new[] { message });
         }
 
         public async Task<ulong> ModifyPubgStatisticAsync(IList<PlayerStatistic> stats, ulong messageId)
         {
             var message = BuildStatisticMessage(stats);
-            using var client = new DiscordWebhookClient(_webhookUrl);
+            using var client = new DiscordWebhookClient(WebhookUrl);
             await client.ModifyMessageAsync(messageId, x => x.Embeds = new[] { message });
             return messageId;
         }

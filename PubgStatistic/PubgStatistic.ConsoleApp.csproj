@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DiscordApi\DiscordApi.csproj" />
-    <ProjectReference Include="..\PubgStatistic.ApplicationLogic\PubgStatistic.ApplicationLogic.csproj" />
-    <ProjectReference Include="..\PubgStatistic.PubgApi\PubgStatistic.PubgApi.csproj" />
+    <ProjectReference Include="..\ApplicationStartup\ApplicationStartup.csproj" />
   </ItemGroup>
 
 </Project>

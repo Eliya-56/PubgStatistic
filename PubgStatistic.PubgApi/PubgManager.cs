@@ -1,44 +1,71 @@
-﻿using Pubg.Net;
+﻿using System.Runtime.CompilerServices;
+using Pubg.Net;
+using PubgStatistic.Contracts.Interfaces;
 using PubgStatistic.Contracts.Records;
 
 namespace PubgStatistic.PubgApi
 {
     public class PubgManager : IPubgManager
     {
-        private readonly string _apiKey;
-        private readonly string _playerId;
-
-        public PubgManager(string apiKey, string playerId)
+        private string? _apiKey;
+        
+        public string ApiKey
         {
-            _apiKey = apiKey;
-            _playerId = playerId;
+            private get
+            {
+                if (_apiKey == null)
+                {
+                    throw new NullReferenceException($"{nameof(ApiKey)} is not set");
+                }
+
+                return _apiKey;
+            }
+            set => _apiKey = value;
         }
 
-        public async IAsyncEnumerable<PlayerStatistic> GetStatisticFromDate(DateTimeOffset fromDate)
+        public async IAsyncEnumerable<PlayerStatistic> GetStatisticFromDate(
+            string playerName,
+            DateTimeOffset fromDate, 
+            [EnumeratorCancellation]CancellationToken ct = default)
         {
+            var player = await GetPlayer(playerName, ct);
+            if (player == null)
+            {
+                throw new NullReferenceException($"Can't find player with name: {playerName}");
+            }
+
             IDictionary<string, IList<PubgParticipantStats>> playerMatchesStatistic = new Dictionary<string, IList<PubgParticipantStats>>();
-            await foreach (var match in GetMatches())
+            await foreach (var match in GetMatches(player, ct))
             {
                 if (DateTimeOffset.Parse(match.CreatedAt) < fromDate)
                 {
                     continue;
                 }
 
-                UpdateParticipantsDictionaryFromMatch(match, playerMatchesStatistic);
+                UpdateParticipantsDictionaryFromMatch(player.Id, match, playerMatchesStatistic);
             }
-            
+
             foreach (var statistic in playerMatchesStatistic)
             {
                 yield return GetPlayerStatistic(statistic.Value);
             }
         }
 
-        public async IAsyncEnumerable<PlayerStatistic> GetStatisticForNumberOfMatches(int numberOfMatches)
+        public async IAsyncEnumerable<PlayerStatistic> GetStatisticForNumberOfMatches(
+            string playerName, 
+            int numberOfMatches,
+            [EnumeratorCancellation] CancellationToken ct = default)
         {
+            var player = await GetPlayer(playerName, ct);
+            if (player == null)
+            {
+                throw new NullReferenceException($"Can't find player with name: {playerName}");
+            }
+
             IDictionary<string, IList<PubgParticipantStats>> playerMatchesStatistic = new Dictionary<string, IList<PubgParticipantStats>>();
-            await foreach (var match in GetMatches().OrderByDescending(x => x.CreatedAt).Take(numberOfMatches))
+            await foreach (var match in GetMatches(player, ct).OrderByDescending(x => x.CreatedAt).Take(numberOfMatches).WithCancellation(ct))
             {
-                UpdateParticipantsDictionaryFromMatch(match, playerMatchesStatistic);
+                UpdateParticipantsDictionaryFromMatch(player.Id, match, playerMatchesStatistic);
             }
 
             foreach (var statistic in playerMatchesStatistic)
@@ -47,23 +74,26 @@ namespace PubgStatistic.PubgApi
             }
         }
 
-        private async IAsyncEnumerable<PubgMatch> GetMatches()
+        private async IAsyncEnumerable<PubgMatch> GetMatches(
+            PubgPlayer player, 
+            [EnumeratorCancellation]CancellationToken ct = default)
         {
-            var player = await new PubgPlayerService(_apiKey).GetPlayerAsync(PubgPlatform.Steam, _playerId);
-
-            var matchService = new PubgMatchService(_apiKey);
+            var matchService = new PubgMatchService(ApiKey);
             foreach (var matchId in player.MatchIds)
             {
-                yield return await matchService.GetMatchAsync(PubgPlatform.Steam, matchId);
+                yield return await matchService.GetMatchAsync(PubgPlatform.Steam, matchId, cancellationToken: ct);
             }
         }
 
-        private void UpdateParticipantsDictionaryFromMatch(PubgMatch match, IDictionary<string, IList<PubgParticipantStats>> playerMatchesStatistic)
+        private void UpdateParticipantsDictionaryFromMatch(
+            string playerId,
+            PubgMatch match,
+            IDictionary<string, IList<PubgParticipantStats>> playerMatchesStatistic)
         {
-            var myRoster = match.Rosters.FirstOrDefault(x => x.Participants.Select(y => y.Stats.PlayerId).Contains(_playerId));
+            var myRoster = match.Rosters.FirstOrDefault(x => x.Participants.Select(y => y.Stats.PlayerId).Contains(playerId));
             if (myRoster == null)
             {
-                throw new NullReferenceException($"Can't find player with id {_playerId} in match with id {match.Id}");
+                throw new NullReferenceException($"Can't find player with id {playerId} in match with id {match.Id}");
             }
 
             foreach (var participant in myRoster.Participants)
@@ -108,6 +138,18 @@ namespace PubgStatistic.PubgApi
                 swimDistance,
                 swimDistance / matchStatistics.Count
             );
+        }
+
+        private async Task<PubgPlayer?> GetPlayer(string name, CancellationToken ct = default)
+        {
+            var players = await new PubgPlayerService(ApiKey)
+                .GetPlayersAsync(
+                    PubgPlatform.Steam,
+                    new GetPubgPlayersRequest()
+                    {
+                        PlayerNames = new[] { name }
+                    }, ct);
+            return players.FirstOrDefault();
         }
     }
 }
