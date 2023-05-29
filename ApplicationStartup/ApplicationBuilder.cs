@@ -8,15 +8,35 @@ namespace ApplicationStartup
 {
     public class ApplicationBuilder
     {
-        public static IContainer BuildAsync(Action<ContainerBuilder> registerAction)
+        private readonly ContainerBuilder _containerBuilder;
+        private readonly IList<ILogger> _loggers;
+
+        public ApplicationBuilder()
         {
-            var containerBuilder = new ContainerBuilder();
-            containerBuilder.RegisterType<PubgManager>().As<IPubgManager>();
-            containerBuilder.RegisterType<DiscordManager>().As<IDiscordManager>();
-            containerBuilder.RegisterType<StatisticManager>().As<IStatisticManager>();
-            
-            registerAction?.Invoke(containerBuilder);
-            return containerBuilder.Build();
+            _loggers = new List<ILogger>();
+            _containerBuilder = new ContainerBuilder();
+
+            _containerBuilder.RegisterType<PubgManager>().As<IPubgManager>();
+            _containerBuilder.RegisterType<DiscordManager>().As<IDiscordManager>();
+            _containerBuilder.RegisterType<StatisticManager>().As<IStatisticManager>();
+        }
+
+        public ApplicationBuilder AddRegistration(Action<ContainerBuilder> registerAction)
+        {
+            registerAction?.Invoke(_containerBuilder);
+            return this;
+        }
+
+        public ApplicationBuilder AddLogger(ILogger logger)
+        {
+            _loggers.Add(logger);
+            return this;
+        }
+
+        public IContainer Build()
+        {
+            _containerBuilder.Register(x => new AggregateLogger(_loggers)).As<ILogger>();
+            return _containerBuilder.Build();
         }
     }
 }

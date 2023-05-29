@@ -15,13 +15,13 @@ const string pubgApiKey = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxZGQ4
 
 var fromDate = DateTimeOffset.UtcNow.AddMonths(-1);
 
-RequestProperties requestProperties = new RequestProperties(playerName, discordWebhookUrl, pubgApiKey);
+RequestProperties requestProperties = new (playerName, discordWebhookUrl, pubgApiKey);
 
-var container = ApplicationBuilder.BuildAsync(containerBuilder =>
-{
-    containerBuilder.RegisterType<ConsoleLogger>().As<ILogger>();
-});
+var container = new ApplicationBuilder()
+    .AddLogger(new ConsoleLogger())
+    .Build();
 await using var scope = container.BeginLifetimeScope();
+
 var statisticManager = scope.Resolve<IStatisticManager>();
 ILogger logger = scope.Resolve<ILogger>();
 
