@@ -30,45 +30,53 @@ namespace PubgStatistic.ConsoleApp
                 return;
             }
 
-            var inputWords = input.Split(' ');
-            switch (inputWords[0])
+            try
             {
-                case Command.SendStatisticByDaysCommand:
-                case Command.SendStatisticByMinutesCommand:
-                case Command.SendStatisticByMonthsCommand:
-                case Command.SendStatisticForLastNumberOfMatchesCommand:
-                    await SendStatisticCommandAsync(inputWords, ct);
-                    break;
-                case Command.StartGameSessionCommand:
-                    _sessionCancellationTokenSource = new CancellationTokenSource();
-                    _statisticManager.StartNewGameSessionAsync(_sessionCancellationTokenSource.Token);
-                    break;
-                case Command.StopGameSessionCommand:
-                    if (_sessionCancellationTokenSource is not null)
-                    {
-                        await _logger.LogMessageAsync("Stopping session");
-                        _sessionCancellationTokenSource.Cancel();
-                    }
-                    else
-                    {
-                        await _logger.LogMessageAsync("Session hasn't been started");
-                    }
-                    break;
-                case Command.SetUserNameCommand:
-                    await SetUserNameAsync(inputWords);
-                    break;
-                case Command.SetPubgApiKeyCommand:
-                    await SetPubgApiKeyAsync(inputWords);
-                    break;
-                case Command.SetDiscordWebhookUrl:
-                    await SetDiscordWebhookAsync(inputWords);
-                    break;
-                case Command.HelpCommand:
-                    await TypeHelp();
-                    break;
-                default:
-                    await _logger.LogErrorAsync($"Command \"{input}\" is not defined");
-                    break;
+                var inputWords = input.Split(' ');
+                switch (inputWords[0])
+                {
+                    case Command.SendStatisticByDaysCommand:
+                    case Command.SendStatisticByMinutesCommand:
+                    case Command.SendStatisticByMonthsCommand:
+                    case Command.SendStatisticForLastNumberOfMatchesCommand:
+                        await SendStatisticCommandAsync(inputWords, ct);
+                        break;
+                    case Command.StartGameSessionCommand:
+                        _sessionCancellationTokenSource = new CancellationTokenSource();
+                        _statisticManager.StartNewGameSessionAsync(_sessionCancellationTokenSource.Token);
+                        break;
+                    case Command.StopGameSessionCommand:
+                        if (_sessionCancellationTokenSource is not null)
+                        {
+                            await _logger.LogMessageAsync("Stopping session");
+                            _sessionCancellationTokenSource.Cancel();
+                        }
+                        else
+                        {
+                            await _logger.LogMessageAsync("Session hasn't been started");
+                        }
+
+                        break;
+                    case Command.SetUserNameCommand:
+                        await SetUserNameAsync(inputWords);
+                        break;
+                    case Command.SetPubgApiKeyCommand:
+                        await SetPubgApiKeyAsync(inputWords);
+                        break;
+                    case Command.SetDiscordWebhookUrl:
+                        await SetDiscordWebhookAsync(inputWords);
+                        break;
+                    case Command.HelpCommand:
+                        await TypeHelp();
+                        break;
+                    default:
+                        await _logger.LogErrorAsync($"Command \"{input}\" is not defined");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync(ex.Message);
             }
         }
 

@@ -4,6 +4,7 @@ using PubgStatistic.ApplicationLogic;
 using PubgStatistic.Contracts;
 using PubgStatistic.Contracts.Interfaces;
 using PubgStatistic.PubgApi;
+using YamlDotNet.Serialization;
 
 namespace ApplicationStartup
 {
@@ -39,6 +40,40 @@ namespace ApplicationStartup
         public ApplicationBuilder AddDiscordWebhookUrl(string discordWebhookUrl)
         {
             _userInfoProvider.DiscordWebhookUrl = discordWebhookUrl;
+            return this;
+        }
+
+        public ApplicationBuilder AddUserInfoFromFile(string filePath)
+        {
+            string config;
+            try
+            {
+                config = File.ReadAllText(filePath);
+            }
+            catch
+            {
+                return this;
+            }
+
+            var deserializer = new DeserializerBuilder().Build();
+
+            var result = deserializer.Deserialize<Dictionary<string, string>>(config);
+
+            if (result.ContainsKey("UserName"))
+            {
+                AddUserName(result["UserName"]);
+            }
+
+            if (result.ContainsKey("ApiKey"))
+            {
+                AddPubgApiKey(result["ApiKey"]);
+            }
+
+            if (result.ContainsKey("WebhookUrl"))
+            {
+                AddDiscordWebhookUrl(result["WebhookUrl"]);
+            }
+
             return this;
         }
 
