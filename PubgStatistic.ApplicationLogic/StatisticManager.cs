@@ -97,13 +97,15 @@ namespace PubgStatistic.ApplicationLogic
 
                         await _logger.LogMessageAsync($"Wait for {largeRequestIntervalSeconds} second");
                         await Task.Delay(TimeSpan.FromSeconds(largeRequestIntervalSeconds), ct);
+                        waitTimeSeconds += largeRequestIntervalSeconds;
                     }
                     else
                     {
                         await _logger.LogMessageAsync($"Wait for {smallRequestIntervalSeconds} second");
                         await Task.Delay(TimeSpan.FromSeconds(smallRequestIntervalSeconds), ct);
+                        waitTimeSeconds += smallRequestIntervalSeconds;
                     }
-                } while (ct.IsCancellationRequested || SessionTimeout < TimeSpan.FromSeconds(waitTimeSeconds));
+                } while (!ct.IsCancellationRequested && SessionTimeout > TimeSpan.FromSeconds(waitTimeSeconds));
             }
             catch (Exception ex)
             {
