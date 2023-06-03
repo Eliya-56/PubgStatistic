@@ -1,4 +1,5 @@
-﻿using PubgStatistic.Contracts.Interfaces;
+﻿using PubgStatistic.Contracts;
+using PubgStatistic.Contracts.Interfaces;
 using PubgStatistic.Contracts.Records;
 
 namespace PubgStatistic.ApplicationLogic
@@ -8,66 +9,70 @@ namespace PubgStatistic.ApplicationLogic
         private readonly IPubgManager _pubgManager;
         private readonly IDiscordManager _discordManager;
         private readonly ILogger _logger;
+        private readonly IUserInfoProvider _userInfoProvider;
+
+        private bool _sessionIsInProgress = false;
 
         public TimeSpan SessionTimeout { get; set; } = TimeSpan.FromHours(2);
 
         public StatisticManager(
             IPubgManager pubgManager,
             IDiscordManager discordManager,
-            ILogger logger)
+            ILogger logger,
+            IUserInfoProvider userInfoProvider)
         {
             _pubgManager = pubgManager;
             _discordManager = discordManager;
             _logger = logger;
+            _userInfoProvider = userInfoProvider;
         }
 
-        public async Task SendStatisticSnapshotAsync(
-            RequestProperties requestProperties,
-            int numberOfGames,
-            CancellationToken ct = default)
+        public async Task SendStatisticSnapshotAsync(int numberOfGames, CancellationToken ct = default)
         {
             await _logger.LogMessageAsync($"Start send statistic snapshot task for last {numberOfGames} games");
 
-            _discordManager.WebhookUrl = requestProperties.DiscordWebhookUrl;
-            _pubgManager.ApiKey = requestProperties.PubgApiKey;
+            _discordManager.WebhookUrl = _userInfoProvider.DiscordWebhookUrl;
+            _pubgManager.ApiKey = _userInfoProvider.PubgApiKey;
 
-            await _logger.LogMessageAsync($"Getting statistic from pubg server");
-            var stats = await _pubgManager.GetStatisticForNumberOfMatches(requestProperties.PlayerName, numberOfGames, ct).ToListAsync(ct);
+            await _logger.LogMessageAsync("Getting statistic from pubg server");
+            var stats = await _pubgManager.GetStatisticForNumberOfMatches(_userInfoProvider.UserName, numberOfGames, ct).ToListAsync(ct);
 
             await _logger.LogMessageAsync($"Send statistic to discord");
             await _discordManager.SendPubgStatisticAsync(stats);
         }
 
-        public async Task SendStatisticSnapshotAsync(
-            RequestProperties requestProperties,
-            DateTimeOffset startDate,
-            CancellationToken ct = default)
+        public async Task SendStatisticSnapshotAsync(DateTimeOffset startDate, CancellationToken ct = default)
         {
             await _logger.LogMessageAsync($"Start send statistic snapshot task from date {startDate:f}");
 
-            _discordManager.WebhookUrl = requestProperties.DiscordWebhookUrl;
-            _pubgManager.ApiKey = requestProperties.PubgApiKey;
+            _discordManager.WebhookUrl = _userInfoProvider.DiscordWebhookUrl;
+            _pubgManager.ApiKey = _userInfoProvider.PubgApiKey;
 
 
             await _logger.LogMessageAsync($"Getting statistic from pubg server");
-            var stats = await _pubgManager.GetStatisticFromDate(requestProperties.PlayerName, startDate, ct).ToListAsync(ct);
+            var stats = await _pubgManager.GetStatisticFromDate(_userInfoProvider.UserName, startDate, ct).ToListAsync(ct);
 
             await _logger.LogMessageAsync($"Send statistic to discord");
             await _discordManager.SendPubgStatisticAsync(stats);
         }
 
-        public async Task StartNewGameSessionAsync(
-            RequestProperties requestProperties,
-            CancellationToken ct = default)
+        public async Task StartNewGameSessionAsync(CancellationToken ct = default)
         {
-            _discordManager.WebhookUrl = requestProperties.DiscordWebhookUrl;
-            _pubgManager.ApiKey = requestProperties.PubgApiKey;
+            if (_sessionIsInProgress)
+            {
+                await _logger.LogErrorAsync("Session is already in progress");
+                return;
+            }
+
+            _discordManager.WebhookUrl = _userInfoProvider.DiscordWebhookUrl;
+            _pubgManager.ApiKey = _userInfoProvider.PubgApiKey;
 
             var smallRequestIntervalSeconds = 60;
             var largeRequestIntervalSeconds = 1200;
             var waitTimeSeconds = 0;
 
             await _logger.LogMessageAsync("Start new game session");
+            _sessionIsInProgress = true;
             var startDateTime = DateTimeOffset.UtcNow;
             ulong? messageId = null;
             IList<PlayerStatistic>? lastStatistics = null;
@@ -76,8 +81,13 @@ namespace PubgStatistic.ApplicationLogic
             {
                 do
                 {
+                    if (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     await _logger.LogMessageAsync("Try get statistic from pubg server");
-                    var newStatistic = await _pubgManager.GetStatisticFromDate(requestProperties.PlayerName, startDateTime).ToListAsync(ct);
+                    var newStatistic = await _pubgManager.GetStatisticFromDate(_userInfoProvider.UserName, startDateTime, ct).ToListAsync(ct);
 
                     if (StatisticChanged(lastStatistics, newStatistic))
                     {
@@ -103,6 +113,7 @@ namespace PubgStatistic.ApplicationLogic
             finally
             {
                 await _logger.LogMessageAsync("Session stopped");
+                _sessionIsInProgress = false;
             }
         }
 

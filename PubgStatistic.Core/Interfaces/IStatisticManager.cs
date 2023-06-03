@@ -1,20 +1,9 @@
-﻿using PubgStatistic.Contracts.Records;
-
-namespace PubgStatistic.Contracts.Interfaces
+﻿namespace PubgStatistic.Contracts.Interfaces
 {
     public interface IStatisticManager
     {
-        Task StartNewGameSessionAsync(
-            RequestProperties requestProperties,
-            CancellationToken ct = default);
-
-        Task SendStatisticSnapshotAsync(
-            RequestProperties requestProperties,
-            int numberOfGames,
-            CancellationToken ct = default);
-        Task SendStatisticSnapshotAsync(
-            RequestProperties requestProperties,
-            DateTimeOffset startDate,
-            CancellationToken ct = default);
+        Task StartNewGameSessionAsync(CancellationToken ct = default);
+        Task SendStatisticSnapshotAsync(int numberOfGames, CancellationToken ct = default);
+        Task SendStatisticSnapshotAsync(DateTimeOffset startDate, CancellationToken ct = default);
     }
 }
