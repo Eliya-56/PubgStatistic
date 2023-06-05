@@ -97,7 +97,7 @@ namespace PubgStatistic.ApplicationLogic
 
                         await _logger.LogMessageAsync($"Wait for {largeRequestIntervalSeconds} second");
                         await Task.Delay(TimeSpan.FromSeconds(largeRequestIntervalSeconds), ct);
-                        waitTimeSeconds += largeRequestIntervalSeconds;
+                        waitTimeSeconds = largeRequestIntervalSeconds;
                     }
                     else
                     {
@@ -139,7 +139,7 @@ namespace PubgStatistic.ApplicationLogic
 
             if (oldStatistic.Count != newStatistic.Count)
             {
-                return false;
+                return true;
             }
 
 
