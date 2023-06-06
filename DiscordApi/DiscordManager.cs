@@ -1,5 +1,4 @@
-﻿using Discord;
-using Discord.Webhook;
+﻿using Discord.Webhook;
 using PubgStatistic.Contracts.Interfaces;
 using PubgStatistic.Contracts.Records;
 using PubgStatistic.Core;
@@ -8,6 +7,8 @@ namespace DiscordApi
 {
     public class DiscordManager : IDiscordManager
     {
+        private const string ImagesDirectory = "statistics-images";
+
         private string? _webhookUrl;
 
         public string WebhookUrl
@@ -26,27 +27,36 @@ namespace DiscordApi
 
         public async Task<ulong> SendPubgStatisticAsync(IList<PlayerStatistic> stats)
         {
-            var message = BuildStatisticMessage(stats);
-            using var client = new DiscordWebhookClient(WebhookUrl);
-            return await client.SendMessageAsync(embeds: new[] { message });
+            Directory.CreateDirectory(ImagesDirectory);
+            try
+            {
+                var filePath = BuildStatisticMessage(stats);
+                using var client = new DiscordWebhookClient(WebhookUrl);
+                return await client.SendFileAsync(filePath, "Статистика игровой сессии");
+            }
+            finally
+            {
+                Directory.Delete(ImagesDirectory, true);
+            }
         }
 
         public async Task<ulong> ModifyPubgStatisticAsync(IList<PlayerStatistic> stats, ulong messageId)
         {
-            var message = BuildStatisticMessage(stats);
             using var client = new DiscordWebhookClient(WebhookUrl);
-            await client.ModifyMessageAsync(messageId, x => x.Embeds = new[] { message });
-            return messageId;
+            await client.DeleteMessageAsync(messageId);
+            return await SendPubgStatisticAsync(stats);
         }
 
-        private Embed BuildStatisticMessage(IList<PlayerStatistic> stats)
+        private string BuildStatisticMessage(IList<PlayerStatistic> stats)
         {
             stats = stats.OrderByDescending(x => x.Damage).ToList();
-            var statsString = stats.FormatStatisticToTable();
-            return new EmbedBuilder()
-                .WithTitle("Статистика игровой сессии")
-                .WithDescription($"```\n{statsString}\n")
-                .Build();
+
+            var fileName = $"PlayerStatistics{Guid.NewGuid()}.png";
+            var statsBitmap = stats.FormatStatisticToImage();
+            var filePath = $"{ImagesDirectory}\\{fileName}";
+            statsBitmap.Save($"{filePath}", System.Drawing.Imaging.ImageFormat.Png);
+
+            return filePath;
         }
     }
 }

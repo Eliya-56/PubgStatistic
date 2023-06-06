@@ -115,9 +115,6 @@ namespace PubgStatistic.Core
             }
 
             return bmp;
-
-            // Save the image
-            //bmp.Save("PlayerStatistics.png", System.Drawing.Imaging.ImageFormat.Png);
         }
     }
 }
