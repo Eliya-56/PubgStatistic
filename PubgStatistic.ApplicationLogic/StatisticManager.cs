@@ -101,6 +101,7 @@ namespace PubgStatistic.ApplicationLogic
                     }
                     else
                     {
+                        await _logger.LogMessageAsync("Statistic didn't changed.");
                         await _logger.LogMessageAsync($"Wait for {smallRequestIntervalSeconds} second");
                         await Task.Delay(TimeSpan.FromSeconds(smallRequestIntervalSeconds), ct);
                         waitTimeSeconds += smallRequestIntervalSeconds;
@@ -148,16 +149,16 @@ namespace PubgStatistic.ApplicationLogic
                 var old = oldStatistic.FirstOrDefault(x => x.Name == @new.Name);
                 if (old == null)
                 {
-                    return false;
+                    return true;
                 }
 
                 if (old.NumberOfMatches != @new.NumberOfMatches)
                 {
-                    return false;
+                    return true;
                 }
             }
 
-            return true;
+            return false;
         }
     }
 }
